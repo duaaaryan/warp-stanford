@@ -272,14 +272,19 @@ fn copy_without_ligatures(font: &CTFont) -> CTFont {
         CFArray::from_CFTypes(&disabled_features).as_CFType(),
     )]);
     let descriptor = font_descriptor::new_from_attributes(&attributes);
-    unsafe {
-        CTFont::wrap_under_create_rule(CTFontCreateCopyWithAttributes(
+    let copy = unsafe {
+        CTFontCreateCopyWithAttributes(
             font.as_concrete_TypeRef(),
             font.pt_size(),
             ptr::null(),
             descriptor.as_concrete_TypeRef(),
-        ))
+        )
+    };
+    if copy.is_null() {
+        log::warn!("Failed to copy font without ligatures; keeping ligatures enabled.");
+        return font.clone();
     }
+    unsafe { CTFont::wrap_under_create_rule(copy) }
 }
 
 /// A hashable, comparable key wrapping a [`CGFont`].
